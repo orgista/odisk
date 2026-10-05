@@ -1,0 +1,167 @@
+import AppKit
+import Foundation
+import Observation
+import ODiskCore
+
+public enum BenchmarkProfile: String, CaseIterable, Identifiable, Sendable {
+    case quick, standard, thorough
+    public var id: String { rawValue }
+    public var title: String { rawValue.capitalized }
+    public var settings: BenchmarkSettings {
+        switch self {
+        case .quick: .quick
+        case .standard: .standard
+        case .thorough: .thorough
+        }
+    }
+    public var summary: String {
+        let s = settings
+        return "\(Formatters.bytes(Double(s.fileSizeBytes))) file · \(s.passes) pass\(s.passes == 1 ? "" : "es") · about \(estimatedMinutes) min"
+    }
+    var estimatedMinutes: Int {
+        let s = settings
+        return max(1, Int((Double(s.tests.count * 2 * s.passes) * s.secondsPerPass + 20) / 60 + 0.5))
+    }
+}
+
+/// Runs benchmarks and keeps their history (JSON in Application Support, inside the sandbox container).
+@MainActor @Observable
+public final class BenchmarkStore {
+    public enum State: Equatable {
+        case idle
+        case running(BenchmarkPhase)
+        case finished
+        case failed(String)
+    }
+
+    public private(set) var state: State = .idle
+    public private(set) var liveRows: [BenchmarkRow] = []
+    public private(set) var history: [BenchmarkResult] = []
+    public private(set) var runningDriveID: Drive.ID?
+    private var cancellation: BenchmarkCancellation?
+
+    public init() { history = load() }
+
+    public var isRunning: Bool { if case .running = state { true } else { false } }
+
+    public func results(for drive: Drive) -> [BenchmarkResult] {
+        history.filter { $0.driveModel == drive.model }.sorted { $0.date > $1.date }
+    }
+
+    public func cancel() { cancellation?.cancel() }
+
+    public func deleteResult(_ result: BenchmarkResult) {
+        history.removeAll { $0.id == result.id }
+        save()
+    }
+
+    /// Runs against `volume`. The startup volume uses the app's own container; other volumes need a
+    /// folder the person picked (security-scoped), which is remembered per volume.
+    public func run(drive: Drive, volume: Volume, settings: BenchmarkSettings) {
+        guard !isRunning else { return }
+        guard let folder = folderForBenchmark(on: volume) else { return }
+        let cancel = BenchmarkCancellation()
+        cancellation = cancel
+        runningDriveID = drive.id
+        liveRows = settings.tests.map { BenchmarkRow(test: $0) }
+        state = .running(.preparing(fraction: 0))
+
+        Task {
+            let outcome: Result<[BenchmarkRow], Error> = await Task.detached(priority: .userInitiated) {
+                let scoped = folder.startAccessingSecurityScopedResource()
+                defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
+                return Result {
+                    try BenchmarkEngine(settings: settings).run(in: folder, cancellation: cancel) { phase in
+                        Task { @MainActor in self.update(phase) }
+                    }
+                }
+            }.value
+            switch outcome {
+            case let .success(rows):
+                let result = BenchmarkResult(date: Date(), driveName: drive.displayName, driveModel: drive.model,
+                                             volumeName: volume.name, settings: settings, rows: rows)
+                liveRows = rows
+                history.append(result)
+                save()
+                state = .finished
+            case let .failure(error as BenchmarkError) where error == .cancelled:
+                state = .idle
+                liveRows = []
+            case let .failure(error):
+                state = .failed(error.localizedDescription)
+            }
+            runningDriveID = nil
+            cancellation = nil
+        }
+    }
+
+    private func update(_ phase: BenchmarkPhase) {
+        guard isRunning else { return }
+        if case let .running(test, isWrite, _, live) = phase, let i = liveRows.firstIndex(where: { $0.test == test }) {
+            // Show the live figure in the running cell; the best pass replaces it when the run ends.
+            let m = BenchmarkMeasurement(bytesPerSecond: live, iops: live / Double(test.blockSize), averageLatencyMicroseconds: 0)
+            if isWrite { liveRows[i].write = m } else { liveRows[i].read = m }
+        }
+        state = .running(phase)
+    }
+
+    // MARK: - Folder access
+
+    private static let bookmarksKey = "benchmarkFolderBookmarks"
+
+    func folderForBenchmark(on volume: Volume) -> URL? {
+        #if ODISK_DEBUG_HOOKS
+        if let path = UserDefaults.standard.string(forKey: "ODiskBenchmarkFolder") { return URL(fileURLWithPath: path) }
+        #endif
+        if volume.isStartupDisk {
+            return FileManager.default.temporaryDirectory // inside the container, on the startup volume
+        }
+        var bookmarks = UserDefaults.standard.dictionary(forKey: Self.bookmarksKey) as? [String: Data] ?? [:]
+        if let data = bookmarks[volume.mountPath] {
+            var stale = false
+            if let url = try? URL(resolvingBookmarkData: data, options: .withSecurityScope, bookmarkDataIsStale: &stale), !stale,
+               FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+        }
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = URL(fileURLWithPath: volume.mountPath)
+        panel.message = "Choose a folder on “\(volume.name)” for oDisk’s temporary test file. It is deleted when the test ends."
+        panel.prompt = "Use This Folder"
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        if let data = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+            bookmarks[volume.mountPath] = data
+            UserDefaults.standard.set(bookmarks, forKey: Self.bookmarksKey)
+        }
+        return url
+    }
+
+    // MARK: - Persistence
+
+    private var historyURL: URL {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return dir.appendingPathComponent("Benchmarks.json")
+    }
+
+    private func load() -> [BenchmarkResult] {
+        #if ODISK_DEBUG_HOOKS
+        if UserDefaults.standard.bool(forKey: "ODiskResetOnLaunch") { return [] }
+        #endif
+        guard let data = try? Data(contentsOf: historyURL) else { return [] }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return (try? decoder.decode([BenchmarkResult].self, from: data)) ?? []
+    }
+
+    private func save() {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        guard let data = try? encoder.encode(history) else { return }
+        try? FileManager.default.createDirectory(at: historyURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: historyURL, options: .atomic)
+    }
+}

@@ -1,0 +1,476 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		09B602385748F5A2079D37F1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5731B68BD3AD3389139B2E14 /* AppIcon.icon */; };
+		2AA027C840E24CE0F439E6BB /* ODiskE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16D8873E24380B25782D311 /* ODiskE2ETests.swift */; };
+		7777913FEBC4FA2E74DCA46B /* ODiskUI in Frameworks */ = {isa = PBXBuildFile; productRef = EE933796C95D9D148D547F83 /* ODiskUI */; };
+		B4E2ABBF14A231310011FCC0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 111F4190DEC905B15B5CFF31 /* PrivacyInfo.xcprivacy */; };
+		D3CFF5CDE901F4FD26933982 /* ODiskApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0532DC785F1948928D78F3 /* ODiskApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		672600A32634A7AAF873A107 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DB4C376F9A8135FFEF55EB4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EF4B40A7AD9A87C7579F6E9C;
+			remoteInfo = oDisk;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		111F4190DEC905B15B5CFF31 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		5731B68BD3AD3389139B2E14 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		8118B32819C7152D3DFD2151 /* oDiskUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = oDiskUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		99EE90AB36367808B0D3A2BB /* oDisk.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = oDisk.entitlements; sourceTree = "<group>"; };
+		9F0532DC785F1948928D78F3 /* ODiskApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ODiskApp.swift; sourceTree = "<group>"; };
+		AE32FF420D64413933521C78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		DB6C1C6CBC7DEE9DB20AA47E /* oDisk */ = {isa = PBXFileReference; lastKnownFileType = folder; name = oDisk; path = ..; sourceTree = SOURCE_ROOT; };
+		EB9FB686BF118F5AE1FFEAC7 /* oDisk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = oDisk.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F16D8873E24380B25782D311 /* ODiskE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ODiskE2ETests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7586170DFBB3710C5C0CD253 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7777913FEBC4FA2E74DCA46B /* ODiskUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0279C1B64EACAF8E09C7A2B7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EB9FB686BF118F5AE1FFEAC7 /* oDisk.app */,
+				8118B32819C7152D3DFD2151 /* oDiskUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		624CF1050633C8DE7077B721 = {
+			isa = PBXGroup;
+			children = (
+				D4A680F3B99837E539FAFEBE /* oDisk */,
+				C86A4DBEFC4D70FF2B8DEC21 /* oDiskUITests */,
+				B203AA5009AB0B584ECEF963 /* Packages */,
+				0279C1B64EACAF8E09C7A2B7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B203AA5009AB0B584ECEF963 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				DB6C1C6CBC7DEE9DB20AA47E /* oDisk */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		C86A4DBEFC4D70FF2B8DEC21 /* oDiskUITests */ = {
+			isa = PBXGroup;
+			children = (
+				F16D8873E24380B25782D311 /* ODiskE2ETests.swift */,
+			);
+			path = oDiskUITests;
+			sourceTree = "<group>";
+		};
+		D4A680F3B99837E539FAFEBE /* oDisk */ = {
+			isa = PBXGroup;
+			children = (
+				5731B68BD3AD3389139B2E14 /* AppIcon.icon */,
+				AE32FF420D64413933521C78 /* Info.plist */,
+				99EE90AB36367808B0D3A2BB /* oDisk.entitlements */,
+				9F0532DC785F1948928D78F3 /* ODiskApp.swift */,
+				111F4190DEC905B15B5CFF31 /* PrivacyInfo.xcprivacy */,
+			);
+			path = oDisk;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		779D9BC75CFF0BCDA84CD315 /* oDiskUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E450790B3FB50ED0DA5F9E70 /* Build configuration list for PBXNativeTarget "oDiskUITests" */;
+			buildPhases = (
+				6389124EEC28B4FF420DDA0D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8FCE6C7401C2C1D926BA3F2E /* PBXTargetDependency */,
+			);
+			name = oDiskUITests;
+			packageProductDependencies = (
+			);
+			productName = oDiskUITests;
+			productReference = 8118B32819C7152D3DFD2151 /* oDiskUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		EF4B40A7AD9A87C7579F6E9C /* oDisk */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23CB6761E7B947FECEDC8EB5 /* Build configuration list for PBXNativeTarget "oDisk" */;
+			buildPhases = (
+				FB05E43A13D82873DAF97C0E /* Sources */,
+				3D16FFF02923A4DA51AA8EFC /* Resources */,
+				7586170DFBB3710C5C0CD253 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = oDisk;
+			packageProductDependencies = (
+				EE933796C95D9D148D547F83 /* ODiskUI */,
+			);
+			productName = oDisk;
+			productReference = EB9FB686BF118F5AE1FFEAC7 /* oDisk.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DB4C376F9A8135FFEF55EB4E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					779D9BC75CFF0BCDA84CD315 = {
+						DevelopmentTeam = 2VQ74PD5YG;
+						ProvisioningStyle = Manual;
+						TestTargetID = EF4B40A7AD9A87C7579F6E9C;
+					};
+					EF4B40A7AD9A87C7579F6E9C = {
+						DevelopmentTeam = 2VQ74PD5YG;
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = FA6E41954C3D770DBBEC7C04 /* Build configuration list for PBXProject "oDiskApps" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 624CF1050633C8DE7077B721;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EB5638F96A4268D6E025EDB3 /* XCLocalSwiftPackageReference ".." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0279C1B64EACAF8E09C7A2B7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EF4B40A7AD9A87C7579F6E9C /* oDisk */,
+				779D9BC75CFF0BCDA84CD315 /* oDiskUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3D16FFF02923A4DA51AA8EFC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				09B602385748F5A2079D37F1 /* AppIcon.icon in Resources */,
+				B4E2ABBF14A231310011FCC0 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6389124EEC28B4FF420DDA0D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2AA027C840E24CE0F439E6BB /* ODiskE2ETests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FB05E43A13D82873DAF97C0E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3CFF5CDE901F4FD26933982 /* ODiskApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8FCE6C7401C2C1D926BA3F2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EF4B40A7AD9A87C7579F6E9C /* oDisk */;
+			targetProxy = 672600A32634A7AAF873A107 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0DD6035AC17CC2DD6D0D165D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.orgista.odisk.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = oDisk;
+			};
+			name = Release;
+		};
+		5A35F7AA1FC008A8038E5EBC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = oDisk/oDisk.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = oDisk/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.orgista.odisk;
+				PRODUCT_NAME = oDisk;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6097D52401E7E5B4EB01DD27 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = oDisk/oDisk.entitlements;
+				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = oDisk/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.orgista.odisk;
+				PRODUCT_NAME = oDisk;
+				PROVISIONING_PROFILE_SPECIFIER = "oDisk Mac App Store 2026-10-05";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		838B48EE2B6E60E65532C07E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 2VQ74PD5YG;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E0110A6E77E55F570D75819F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 2VQ74PD5YG;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		F3BE09A4EE1961F8E354E13E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.orgista.odisk.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = oDisk;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		23CB6761E7B947FECEDC8EB5 /* Build configuration list for PBXNativeTarget "oDisk" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A35F7AA1FC008A8038E5EBC /* Debug */,
+				6097D52401E7E5B4EB01DD27 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E450790B3FB50ED0DA5F9E70 /* Build configuration list for PBXNativeTarget "oDiskUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3BE09A4EE1961F8E354E13E /* Debug */,
+				0DD6035AC17CC2DD6D0D165D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FA6E41954C3D770DBBEC7C04 /* Build configuration list for PBXProject "oDiskApps" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0110A6E77E55F570D75819F /* Debug */,
+				838B48EE2B6E60E65532C07E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		EB5638F96A4268D6E025EDB3 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EE933796C95D9D148D547F83 /* ODiskUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ODiskUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DB4C376F9A8135FFEF55EB4E /* Project object */;
+}
