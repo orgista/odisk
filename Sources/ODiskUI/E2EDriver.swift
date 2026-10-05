@@ -36,9 +36,9 @@ enum E2EDriver {
             case let .available(s):
                 r["health"] = s.assessment.status.title
                 r["lifeRemaining"] = s.assessment.lifeRemainingPercent ?? -1
-                r["temperatureC"] = s.log.compositeTemperatureCelsius ?? -1
-                r["written"] = Formatters.bytes(s.log.bytesWritten)
-                r["powerOnHours"] = s.log.powerOnHours
+                r["temperatureC"] = s.metrics.temperatureCelsius ?? -1
+                r["written"] = Formatters.bytes(s.metrics.bytesWritten ?? 0)
+                r["powerOnHours"] = s.metrics.powerOnHours ?? -1
             case .unsupported: r["health"] = "unsupported"
             case .denied: r["health"] = "DENIED"
             case let .failed(m): r["health"] = "failed: \(m)"
@@ -68,7 +68,7 @@ enum E2EDriver {
             setTab(.benchmark)
             try? await Task.sleep(for: .seconds(1))
             model.benchmarks.run(drive: drive, volume: volume,
-                                 settings: BenchmarkSettings(fileSizeBytes: 256 << 20, passes: 1, secondsPerPass: 1))
+                                 settings: BenchmarkSettings(fileSizeBytes: 256 << 20, passes: 1, secondsPerPass: 1, mixReadPercent: 70))
             for _ in 0..<600 where model.benchmarks.isRunning { try? await Task.sleep(for: .milliseconds(200)) }
             switch model.benchmarks.state {
             case .finished:
@@ -76,12 +76,14 @@ enum E2EDriver {
                 report["benchmark"] = latest?.rows.map { row -> [String: Any] in
                     ["test": row.test.label,
                      "readMBps": (row.read?.bytesPerSecond ?? 0) / 1e6,
-                     "writeMBps": (row.write?.bytesPerSecond ?? 0) / 1e6]
+                     "writeMBps": (row.write?.bytesPerSecond ?? 0) / 1e6,
+                     "mixMBps": (row.mix?.bytesPerSecond ?? 0) / 1e6]
                 } ?? []
                 report["shareText"] = latest?.shareText ?? ""
             case let .failed(m): report["benchmark"] = "failed: \(m)"
             default: report["benchmark"] = "unexpected state"
             }
+            report["historySamples"] = model.history.samples(for: drive).count
             let leftovers = (try? FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path))?
                 .filter { $0.hasPrefix(".oDisk-benchmark") } ?? []
             report["leftoverTestFiles"] = leftovers.count

@@ -45,7 +45,8 @@ public struct RootView: View {
                     switch tab {
                     case .health:
                         DriveHealthView(drive: drive, state: model.smart[drive.id] ?? .loading,
-                                        history: model.temperatureHistory[drive.id] ?? [])
+                                        history: model.temperatureHistory[drive.id] ?? [],
+                                        longHistory: model.history.samples(for: drive))
                     case .benchmark:
                         BenchmarkView(drive: drive, store: model.benchmarks)
                     case .details:
@@ -107,7 +108,7 @@ struct DriveRow: View {
             } else if let s = state.snapshot {
                 VStack(alignment: .trailing, spacing: 2) {
                     Image(systemName: s.assessment.status.symbol).foregroundStyle(s.assessment.status.color)
-                    if let c = s.log.compositeTemperatureCelsius {
+                    if let c = s.metrics.temperatureCelsius {
                         Text((TemperatureUnit(rawValue: unitRaw) ?? .celsius).format(c))
                             .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                     }

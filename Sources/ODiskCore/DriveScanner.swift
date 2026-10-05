@@ -18,10 +18,11 @@ public enum DriveScanner {
             defer { IOObjectRelease(media) }
             // A physical whole disk sits on IOBlockStorageDriver → IOBlockStorageDevice.
             // APFS's synthesized disks sit on a container instead, so they are skipped here.
-            guard let driver = parent(of: media), IOObjectConformsTo(driver, "IOBlockStorageDriver") != 0 else { continue }
+            guard let driver = parent(of: media) else { continue }
             defer { IOObjectRelease(driver) }
-            guard let device = parent(of: driver), IOObjectConformsTo(device, "IOBlockStorageDevice") != 0 else { continue }
+            guard IOObjectConformsTo(driver, "IOBlockStorageDriver") != 0, let device = parent(of: driver) else { continue }
             defer { IOObjectRelease(device) }
+            guard IOObjectConformsTo(device, "IOBlockStorageDevice") != 0 else { continue }
 
             let protocolInfo = dictionary(device, "Protocol Characteristics")
             let deviceInfo = dictionary(device, "Device Characteristics")
@@ -49,7 +50,8 @@ public enum DriveScanner {
                 isSolidState: (deviceInfo["Medium Type"] as? String) != "Rotational",
                 isRemovable: (property(media, "Removable") as? Bool) ?? false,
                 usbLinkSpeedBitsPerSecond: interconnect == "USB" ? usbLinkSpeed(of: device) : nil,
-                smartCapable: (property(device, "NVMe SMART Capable") as? Bool) ?? false,
+                smartProtocol: (property(device, "NVMe SMART Capable") as? Bool) == true ? .nvme
+                    : ((property(device, "SMART Capable") as? Bool) == true ? .ata : nil),
                 registryEntryID: entryID,
                 volumes: (volumesByDevice[entryID] ?? []).sorted { ($0.isStartupDisk ? 0 : 1, $0.name) < ($1.isStartupDisk ? 0 : 1, $1.name) }
             ))
@@ -62,6 +64,41 @@ public enum DriveScanner {
         }
     }
 
+    /// Reads S.M.A.R.T. for a drive found by `scan()`, using the drive's protocol.
+    public static func readSMART(drive: Drive) -> Result<SMARTSnapshot, SMARTReadError> {
+        switch drive.smartProtocol {
+        case .nvme: readSMART(registryEntryID: drive.registryEntryID)
+        case .ata: readATASMART(registryEntryID: drive.registryEntryID)
+        case nil: .failure(.notSupported)
+        }
+    }
+
+    /// Reads ATA S.M.A.R.T. (SATA drives, internal or behind a USB bridge that supports SAT).
+    public static func readATASMART(registryEntryID: UInt64) -> Result<SMARTSnapshot, SMARTReadError> {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IORegistryEntryIDMatching(registryEntryID))
+        guard service != 0 else { return .failure(.notSupported) }
+        defer { IOObjectRelease(service) }
+        var data = [UInt8](repeating: 0, count: 512)
+        var thresholds = [UInt8](repeating: 0, count: 512)
+        var identify = [UInt8](repeating: 0, count: 512)
+        var exceeded: Int32 = 0
+        let rc = odisk_ata_read(service, &data, &thresholds, &identify, &exceeded)
+        guard rc == 0 else { return .failure(mapError(rc)) }
+        guard let log = try? ATAHealthLog(data: data, thresholds: thresholds, thresholdExceeded: exceeded != 0) else {
+            return .failure(.failed(-1))
+        }
+        return .success(SMARTSnapshot(date: Date(), ata: log, identify: ATAIdentify(bytes: identify)))
+    }
+
+    static func mapError(_ rc: Int32) -> SMARTReadError {
+        let code = Int32(bitPattern: UInt32(truncatingIfNeeded: rc))
+        switch UInt32(bitPattern: code) {
+        case 0xe00002e2, 0xe00002c1, 0xe00002be: return .accessDenied(code)
+        case 0xe00002c7: return .notSupported
+        default: return .failed(code)
+        }
+    }
+
     /// Reads the NVMe health log for a drive found by `scan()`.
     public static func readSMART(registryEntryID: UInt64) -> Result<SMARTSnapshot, SMARTReadError> {
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IORegistryEntryIDMatching(registryEntryID))
@@ -71,15 +108,7 @@ public enum DriveScanner {
         var log = [UInt8](repeating: 0, count: 512)
         var identify = [UInt8](repeating: 0, count: 4096)
         let rc = odisk_nvme_read(service, &log, &identify)
-        guard rc == 0 else {
-            // kIOReturnNotPermitted (0xe00002e2) / kIOReturnNotPrivileged (0xe00002c1) / sandbox deny (0xe00002be)
-            let code = Int32(bitPattern: UInt32(truncatingIfNeeded: rc))
-            switch UInt32(bitPattern: code) {
-            case 0xe00002e2, 0xe00002c1, 0xe00002be: return .failure(.accessDenied(code))
-            case 0xe00002c7: return .failure(.notSupported)
-            default: return .failure(.failed(code))
-            }
-        }
+        guard rc == 0 else { return .failure(mapError(rc)) }
         guard let parsed = try? NVMeHealthLog(bytes: log) else { return .failure(.failed(-1)) }
         return .success(SMARTSnapshot(date: Date(), log: parsed, identify: NVMeIdentify(bytes: identify)))
     }

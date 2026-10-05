@@ -82,6 +82,17 @@ public struct NVMeIdentify: Equatable, Sendable, Codable {
     public var criticalTemperatureKelvin: Int
     /// Total NVM capacity in bytes (0 = not reported).
     public var totalCapacityBytes: Double
+    /// NVMe specification version the controller implements, e.g. "1.4" (nil before 1.2, where it was optional).
+    public var nvmeVersion: String?
+    /// Dataset Management (TRIM / deallocate) support.
+    public var supportsTRIM: Bool
+    public var supportsWriteZeroes: Bool
+    /// Volatile write cache present.
+    public var hasVolatileWriteCache: Bool
+    /// Sanitize (crypto erase, block erase or overwrite) support.
+    public var supportsSanitize: Bool
+    /// Number of firmware slots.
+    public var firmwareSlots: Int
 
     public init?(bytes: [UInt8]) {
         guard bytes.count >= 512, bytes[24..<64].contains(where: { $0 != 0 }) else { return nil }
@@ -95,6 +106,24 @@ public struct NVMeIdentify: Equatable, Sendable, Codable {
         warningTemperatureKelvin = u16(266)
         criticalTemperatureKelvin = u16(268)
         totalCapacityBytes = (0..<16).reversed().reduce(0.0) { $0 * 256 + Double(bytes[280 + $1]) }
+        let major = u16(82), minor = Int(bytes[81])
+        nvmeVersion = major > 0 ? "\(major).\(minor)" + (bytes[80] > 0 ? ".\(bytes[80])" : "") : nil
+        let oncs = u16(520)
+        supportsTRIM = oncs & (1 << 2) != 0
+        supportsWriteZeroes = oncs & (1 << 3) != 0
+        hasVolatileWriteCache = bytes[525] & 1 != 0
+        supportsSanitize = (bytes[328] & 0b111) != 0
+        firmwareSlots = Int((bytes[260] >> 1) & 0b111)
+    }
+
+    /// Feature list for the Details page, CrystalDiskInfo "Features" style.
+    public var featureList: [String] {
+        var f: [String] = []
+        if supportsTRIM { f.append("TRIM") }
+        if hasVolatileWriteCache { f.append("Volatile Write Cache") }
+        if supportsWriteZeroes { f.append("Write Zeroes") }
+        if supportsSanitize { f.append("Sanitize") }
+        return f
     }
 }
 

@@ -29,9 +29,10 @@ d=r.get("drives",[]); print(f"drives: {len(d)}")
 for x in d: print(f"  {x['name']} | {x['model']} | {x['connection']} | health={x['health']} temp={x.get('temperatureC')}")
 if not d or d[0]["health"] in ("DENIED","loading") or d[0]["health"].startswith("failed"): ok=False; print("FAIL: startup drive health")
 b=r.get("benchmark")
-if not isinstance(b,list) or len(b)!=4 or any(x["readMBps"]<=0 or x["writeMBps"]<=0 for x in b): ok=False; print("FAIL: benchmark",b)
+if not isinstance(b,list) or len(b)!=4 or any(x["readMBps"]<=0 or x["writeMBps"]<=0 or x.get("mixMBps",0)<=0 for x in b): ok=False; print("FAIL: benchmark",b)
 else:
-  for x in b: print(f"  {x['test']:12} read {x['readMBps']:9.1f}  write {x['writeMBps']:9.1f} MB/s")
+  for x in b: print(f"  {x['test']:12} read {x['readMBps']:9.1f}  write {x['writeMBps']:9.1f}  mix {x['mixMBps']:9.1f} MB/s")
+if r.get("historySamples",0)<1: ok=False; print("FAIL: no health history recorded")
 if r.get("leftoverTestFiles",1)!=0: ok=False; print("FAIL: test file left behind")
 print("E2E PASS" if ok else "E2E FAIL"); sys.exit(0 if ok else 1)
 PY

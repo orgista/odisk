@@ -3,8 +3,15 @@ import ODiskUI
 
 @main
 struct ODiskApp: App {
-    @State private var model = AppModel()
+    @State private var model: AppModel
     @AppStorage("showMenuBarExtra") private var showMenuBar = true
+
+    init() {
+        // Start monitoring at launch, even when only the menu bar item is shown (e.g. opened at login).
+        let model = AppModel()
+        _model = State(initialValue: model)
+        Task { @MainActor in model.start() }
+    }
 
     var body: some Scene {
         Window("oDisk", id: "main") {
@@ -14,12 +21,13 @@ struct ODiskApp: App {
         .commands { ODiskCommands() }
 
         Settings {
-            SettingsView()
+            SettingsView(model: model)
         }
 
-        MenuBarExtra("oDisk", systemImage: "internaldrive", isInserted: $showMenuBar) {
+        MenuBarExtra(isInserted: $showMenuBar) {
             MenuBarContent(model: model)
-                .task { model.start() }
+        } label: {
+            MenuBarLabel(model: model)
         }
     }
 }

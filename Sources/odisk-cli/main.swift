@@ -19,8 +19,8 @@ case "bench":
 default:
     for d in DriveScanner.scan() {
         print(d.displayName, "|", d.model, "|", d.connectionDescription, "| smart:", d.smartCapable)
-        if case let .success(s) = DriveScanner.readSMART(registryEntryID: d.registryEntryID) {
-            print("  ", s.assessment.status.title, s.assessment.lifeRemainingPercent ?? -1, "%", s.log.compositeTemperatureCelsius ?? -1, "C")
+        if case let .success(s) = DriveScanner.readSMART(drive: d) {
+            print("  ", s.assessment.status.title, s.assessment.lifeRemainingPercent ?? -1, "%", s.metrics.temperatureCelsius ?? -1, "C")
         }
     }
 }

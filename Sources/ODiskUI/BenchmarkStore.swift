@@ -3,27 +3,6 @@ import Foundation
 import Observation
 import ODiskCore
 
-public enum BenchmarkProfile: String, CaseIterable, Identifiable, Sendable {
-    case quick, standard, thorough
-    public var id: String { rawValue }
-    public var title: String { rawValue.capitalized }
-    public var settings: BenchmarkSettings {
-        switch self {
-        case .quick: .quick
-        case .standard: .standard
-        case .thorough: .thorough
-        }
-    }
-    public var summary: String {
-        let s = settings
-        return "\(Formatters.bytes(Double(s.fileSizeBytes))) file · \(s.passes) pass\(s.passes == 1 ? "" : "es") · about \(estimatedMinutes) min"
-    }
-    var estimatedMinutes: Int {
-        let s = settings
-        return max(1, Int((Double(s.tests.count * 2 * s.passes) * s.secondsPerPass + 20) / 60 + 0.5))
-    }
-}
-
 /// Runs benchmarks and keeps their history (JSON in Application Support, inside the sandbox container).
 @MainActor @Observable
 public final class BenchmarkStore {
@@ -97,17 +76,31 @@ public final class BenchmarkStore {
 
     private func update(_ phase: BenchmarkPhase) {
         guard isRunning else { return }
-        if case let .running(test, isWrite, _, live) = phase, let i = liveRows.firstIndex(where: { $0.test == test }) {
+        if case let .running(test, kind, _, live) = phase, let i = liveRows.firstIndex(where: { $0.test == test }) {
             // Show the live figure in the running cell; the best pass replaces it when the run ends.
-            let m = BenchmarkMeasurement(bytesPerSecond: live, iops: live / Double(test.blockSize), averageLatencyMicroseconds: 0)
-            if isWrite { liveRows[i].write = m } else { liveRows[i].read = m }
+            liveRows[i][kind] = BenchmarkMeasurement(bytesPerSecond: live, iops: live / Double(test.blockSize), averageLatencyMicroseconds: 0)
         }
         state = .running(phase)
     }
 
     // MARK: - Folder access
 
-    private static let bookmarksKey = "benchmarkFolderBookmarks"
+    private static let bookmarksKey = "benchmarkFolderBookmarksByVolume"
+
+    /// A stable key for a volume: its UUID when available, else its mount path.
+    static func volumeKey(_ volume: Volume) -> String {
+        let url = URL(fileURLWithPath: volume.mountPath)
+        return (try? url.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString) ?? volume.mountPath
+    }
+
+    /// True when `url` lives on the same volume as `volume`.
+    static func isOnVolume(_ url: URL, _ volume: Volume) -> Bool {
+        let keys: Set<URLResourceKey> = [.volumeUUIDStringKey, .volumeURLKey]
+        let a = try? url.resourceValues(forKeys: keys)
+        let b = try? URL(fileURLWithPath: volume.mountPath).resourceValues(forKeys: keys)
+        if let ua = a?.volumeUUIDString, let ub = b?.volumeUUIDString { return ua == ub }
+        return a?.volume?.standardizedFileURL == b?.volume?.standardizedFileURL
+    }
 
     func folderForBenchmark(on volume: Volume) -> URL? {
         #if ODISK_DEBUG_HOOKS
@@ -116,34 +109,64 @@ public final class BenchmarkStore {
         if volume.isStartupDisk {
             return FileManager.default.temporaryDirectory // inside the container, on the startup volume
         }
+        let key = Self.volumeKey(volume)
         var bookmarks = UserDefaults.standard.dictionary(forKey: Self.bookmarksKey) as? [String: Data] ?? [:]
-        if let data = bookmarks[volume.mountPath] {
+        if let data = bookmarks[key] {
             var stale = false
-            if let url = try? URL(resolvingBookmarkData: data, options: .withSecurityScope, bookmarkDataIsStale: &stale), !stale,
-               FileManager.default.fileExists(atPath: url.path) {
+            if let url = try? URL(resolvingBookmarkData: data, options: .withSecurityScope, bookmarkDataIsStale: &stale),
+               FileManager.default.fileExists(atPath: url.path), Self.isOnVolume(url, volume) {
+                if stale, let fresh = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                    bookmarks[key] = fresh
+                    UserDefaults.standard.set(bookmarks, forKey: Self.bookmarksKey)
+                }
                 return url
             }
         }
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: volume.mountPath)
-        panel.message = "Choose a folder on “\(volume.name)” for oDisk’s temporary test file. It is deleted when the test ends."
-        panel.prompt = "Use This Folder"
-        guard panel.runModal() == .OK, let url = panel.url else { return nil }
-        if let data = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
-            bookmarks[volume.mountPath] = data
-            UserDefaults.standard.set(bookmarks, forKey: Self.bookmarksKey)
+        while true {
+            let panel = NSOpenPanel()
+            panel.canChooseDirectories = true
+            panel.canChooseFiles = false
+            panel.canCreateDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.directoryURL = URL(fileURLWithPath: volume.mountPath)
+            panel.message = "Choose a folder on “\(volume.name)” for oDisk’s temporary test file. It is deleted when the test ends."
+            panel.prompt = "Use This Folder"
+            guard panel.runModal() == .OK, let url = panel.url else { return nil }
+            guard Self.isOnVolume(url, volume) else {
+                let alert = NSAlert()
+                alert.messageText = "That folder isn’t on “\(volume.name)”"
+                alert.informativeText = "Choose a folder on the drive you want to test."
+                alert.runModal()
+                continue
+            }
+            if let data = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                bookmarks[key] = data
+                UserDefaults.standard.set(bookmarks, forKey: Self.bookmarksKey)
+            }
+            return url
         }
-        return url
+    }
+
+    /// Removes test files left by older versions of oDisk (current ones unlink the file as soon as it's open).
+    func sweepLeftoverTestFiles() {
+        BenchmarkEngine.sweepLeftovers(in: FileManager.default.temporaryDirectory)
+        let bookmarks = UserDefaults.standard.dictionary(forKey: Self.bookmarksKey) as? [String: Data] ?? [:]
+        for data in bookmarks.values {
+            var stale = false
+            guard let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI], bookmarkDataIsStale: &stale) else { continue }
+            let scoped = url.startAccessingSecurityScopedResource()
+            BenchmarkEngine.sweepLeftovers(in: url)
+            if scoped { url.stopAccessingSecurityScopedResource() }
+        }
     }
 
     // MARK: - Persistence
 
     private var historyURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        #if ODISK_DEBUG_HOOKS
+        if UserDefaults.standard.bool(forKey: "ODiskResetOnLaunch") { return dir.appendingPathComponent("Benchmarks-e2e.json") }
+        #endif
         return dir.appendingPathComponent("Benchmarks.json")
     }
 

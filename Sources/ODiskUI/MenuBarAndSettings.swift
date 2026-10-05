@@ -17,22 +17,46 @@ public struct MenuBarContent: View {
                 openWindow(id: "main")
                 NSApp.activate()
             } label: {
-                Text("\(d.displayName) — \(s?.assessment.status.title ?? "No health data")\(s?.log.compositeTemperatureCelsius.map { ", " + (TemperatureUnit(rawValue: unitRaw) ?? .celsius).format($0) } ?? "")")
+                Label {
+                    Text("\(d.displayName): \(s?.assessment.status.title ?? "no health data")\(s?.metrics.temperatureCelsius.map { ", " + (TemperatureUnit(rawValue: unitRaw) ?? .celsius).format($0) } ?? "")")
+                } icon: {
+                    Image(systemName: s?.assessment.status.symbol ?? d.kind.symbolName)
+                }
             }
         }
         Divider()
         Button("Open oDisk") { openWindow(id: "main"); NSApp.activate() }
-        Button("Refresh") { model.refresh() }
+        Button("Check Now") { model.refresh() }
+        SettingsLink { Text("Settings…") }
         Divider()
         Button("Quit oDisk") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }
 
+/// The menu bar icon: a drive symbol that turns into a warning when any drive needs attention.
+public struct MenuBarLabel: View {
+    var model: AppModel
+    public init(model: AppModel) { self.model = model }
+    public var body: some View {
+        switch model.overallStatus {
+        case .bad: Image(systemName: "externaldrive.badge.xmark")
+        case .caution: Image(systemName: "externaldrive.badge.exclamationmark")
+        default: Image(systemName: "internaldrive")
+        }
+    }
+}
+
 public struct SettingsView: View {
+    var model: AppModel
     @AppStorage("temperatureUnit") private var unitRaw = TemperatureUnit.current.rawValue
     @AppStorage("showMenuBarExtra") private var showMenuBar = true
+    @AppStorage("notifyHealth") private var notifyHealth = true
+    @AppStorage("notifyTemperature") private var notifyTemperature = true
+    @AppStorage("checkInterval") private var checkInterval = CheckInterval.halfMinute.rawValue
+    @State private var opensAtLogin = AppModel.opensAtLogin
+    @State private var loginError: String?
 
-    public init() {}
+    public init(model: AppModel) { self.model = model }
 
     public var body: some View {
         TabView {
@@ -40,12 +64,34 @@ public struct SettingsView: View {
                 Picker("Temperature", selection: $unitRaw) {
                     ForEach(TemperatureUnit.allCases) { Text($0.title).tag($0.rawValue) }
                 }
-                Toggle("Show drive health in the menu bar", isOn: $showMenuBar)
                 Text("oDisk reads health data and runs speed tests on this Mac only. It has no accounts and sends nothing over the network.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             .formStyle(.grouped)
             .tabItem { Label("General", systemImage: "gearshape") }
+
+            Form {
+                Section {
+                    Toggle("Open oDisk at login", isOn: Binding(get: { opensAtLogin }, set: { on in
+                        loginError = AppModel.setOpensAtLogin(on)
+                        opensAtLogin = AppModel.opensAtLogin
+                    }))
+                    if let loginError { Text(loginError).font(.caption).foregroundStyle(.orange) }
+                    Toggle("Show drive health in the menu bar", isOn: $showMenuBar)
+                    Picker("Check drives", selection: $checkInterval) {
+                        ForEach(CheckInterval.allCases) { Text($0.title).tag($0.rawValue) }
+                    }
+                    .onChange(of: checkInterval) { model.reschedule() }
+                } footer: {
+                    Text("oDisk checks while it's open or in the menu bar. With the menu bar on, closing the window keeps it running.")
+                }
+                Section("Notify me when") {
+                    Toggle("A drive's health status gets worse or new data errors appear", isOn: $notifyHealth)
+                    Toggle("A drive gets too hot", isOn: $notifyTemperature)
+                }
+            }
+            .formStyle(.grouped)
+            .tabItem { Label("Monitoring", systemImage: "waveform.path.ecg") }
 
             ScrollView {
                 Text(notices).font(.caption).textSelection(.enabled).padding()
@@ -53,7 +99,7 @@ public struct SettingsView: View {
             }
             .tabItem { Label("Acknowledgements", systemImage: "doc.text") }
         }
-        .frame(width: 480, height: 320)
+        .frame(width: 520, height: 360)
     }
 
     private var notices: String {

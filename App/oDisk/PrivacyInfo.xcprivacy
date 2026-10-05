@@ -13,7 +13,7 @@
 		</dict>
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryDiskSpace</string>
-			<key>NSPrivacyAccessedAPITypeReasons</key><array><string>85F4.1</string></array>
+			<key>NSPrivacyAccessedAPITypeReasons</key><array><string>85F4.1</string><string>E174.1</string></array>
 		</dict>
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategorySystemBootTime</string>

@@ -1,6 +1,7 @@
 #include "CODiskSMART.h"
 #include <string.h>
 #include <IOKit/IOCFPlugIn.h>
+#include <IOKit/storage/ata/ATASMARTLib.h>
 #include <CoreFoundation/CoreFoundation.h>
 
 // Public UUIDs from NVMeSMARTLibExternal.h (IOKit storage family).
@@ -39,6 +40,64 @@ int odisk_nvme_read(io_service_t service, uint8_t *smartLog512, uint8_t *identif
         if ((*smart)->GetIdentifyData(smart, identify4096, 0) != kIOReturnSuccess) {
             memset(identify4096, 0, 4096);
         }
+    }
+    (*smart)->Release(smart);
+    IODestroyPlugInInterface(plugin);
+    return result;
+}
+
+// ATA / SATA SMART through Apple's public ATASMARTLib (IOKit/storage/ata/ATASMARTLib.h).
+// Read-only: never calls SMARTEnableDisableOperations, SMARTExecuteOffLineImmediate, SMARTWriteLogAtAddress or autosave.
+int odisk_ata_read(io_service_t service, uint8_t *data512, uint8_t *thresholds512, uint8_t *identify512, int *thresholdExceeded) {
+    if (data512 == NULL || thresholds512 == NULL) {
+        return kIOReturnBadArgument;
+    }
+    memset(data512, 0, 512);
+    memset(thresholds512, 0, 512);
+    if (identify512 != NULL) {
+        memset(identify512, 0, 512);
+    }
+    if (thresholdExceeded != NULL) {
+        *thresholdExceeded = 0;
+    }
+    IOCFPlugInInterface **plugin = NULL;
+    SInt32 score = 0;
+    kern_return_t kr = IOCreatePlugInInterfaceForService(service, kIOATASMARTUserClientTypeID,
+                                                         kIOCFPlugInInterfaceID, &plugin, &score);
+    if (kr != KERN_SUCCESS || plugin == NULL) {
+        return kr != KERN_SUCCESS ? kr : kIOReturnError;
+    }
+    IOATASMARTInterface **smart = NULL;
+    HRESULT hr = (*plugin)->QueryInterface(plugin, CFUUIDGetUUIDBytes(kIOATASMARTInterfaceID), (LPVOID *)&smart);
+    if (hr != S_OK || smart == NULL) {
+        IODestroyPlugInInterface(plugin);
+        return kIOReturnUnsupported;
+    }
+    // Never enable/disable SMART or touch autosave: that changes drive settings. If SMART is off,
+    // the reads below fail and the app reports health as unavailable.
+    Boolean exceeded = false;
+    IOReturn result = (*smart)->SMARTReturnStatus(smart, &exceeded);
+    if (result == kIOReturnSuccess && thresholdExceeded != NULL) {
+        *thresholdExceeded = exceeded ? 1 : 0;
+    }
+    if (result == kIOReturnSuccess) {
+        result = (*smart)->SMARTReadData(smart, (ATASMARTData *)data512);
+    }
+    if (result == kIOReturnSuccess) {
+        result = (*smart)->SMARTValidateReadData(smart, (const ATASMARTData *)data512);
+    }
+    if (result == kIOReturnSuccess) {
+        result = (*smart)->SMARTReadDataThresholds(smart, (ATASMARTDataThresholds *)thresholds512);
+    }
+    if (result == kIOReturnSuccess && identify512 != NULL) {
+        UInt32 got = 0;
+        if ((*smart)->GetATAIdentifyData(smart, identify512, 512, &got) != kIOReturnSuccess) {
+            memset(identify512, 0, 512);
+        }
+    }
+    if (result != kIOReturnSuccess) {
+        memset(data512, 0, 512);
+        memset(thresholds512, 0, 512);
     }
     (*smart)->Release(smart);
     IODestroyPlugInInterface(plugin);

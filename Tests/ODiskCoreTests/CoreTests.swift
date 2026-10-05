@@ -177,8 +177,8 @@ func makeLog(warning: UInt8 = 0, tempK: Int = 310, spare: UInt8 = 100, threshold
 
     @Test func readsSMARTOnStartupDriveWhenCapable() throws {
         guard let d = DriveScanner.scan().first, d.smartCapable else { return }
-        let snap = try DriveScanner.readSMART(registryEntryID: d.registryEntryID).get()
-        #expect(snap.log.powerOnHours > 0)
+        let snap = try DriveScanner.readSMART(drive: d).get()
+        #expect((snap.metrics.powerOnHours ?? 0) > 0)
         #expect(snap.assessment.lifeRemainingPercent != nil)
     }
 }

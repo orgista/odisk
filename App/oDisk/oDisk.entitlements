@@ -9,6 +9,8 @@
 	<array>
 		<string>AppleNVMeSMARTUserClient</string>
 		<string>AppleNVMeTranslationSMARTUserClient</string>
+		<string>AHCISMARTUserClient</string>
+		<string>AppleSATLSMARTUserClient</string>
 	</array>
 </dict>
 </plist>

@@ -183,5 +183,7 @@ enum MetricHelp {
     static let busy = "Total minutes the drive's controller has spent busy with work."
     static let hostWrites = "Number of write commands your Mac has sent to the drive."
     static let hostReads = "Number of read commands your Mac has sent to the drive."
+    static let reallocated = "Worn or damaged areas the drive has swapped for spare ones. A rising count means the drive is wearing out."
+    static let pending = "Areas the drive couldn't read reliably and is waiting to remap. Anything above zero is a reason to back up."
     static let criticalWarning = "Warning flags the drive raises itself: spare blocks low, too hot, reliability degraded, or read-only."
 }
