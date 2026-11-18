@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# Last step of a ship: check a signed build, then publish it to GitHub Releases
+# through scripts/release-github.
+#
+# The build scripts call this after a successful signed build. It is a dry run
+# unless you pass --publish, so nothing reaches GitHub without an explicit go.
+#
+# Usage:
+#   scripts/ship-github [--publish] [--draft] <version> <file>...
+#   scripts/ship-github --check-changelog <version>
+#
+#   --check-changelog  only check that CHANGELOG.md has a non-empty
+#                      "## <version>" section (run it before a long build).
+#   --publish          really publish (default: dry run, nothing changes).
+#   --draft            publish as a draft release.
+#   --no-verify        dry run only: skip the signature checks (for previewing
+#                      the tag, notes and assets on a Mac without the tools).
+#
+# Checks before publishing:
+#   - CHANGELOG.md has notes for <version>
+#   - .apk: apksigner verifies a v2+ signature, the package is one of
+#     APK_PACKAGES, versionName is <version>, and (if set) the signing
+#     certificate matches APK_CERT_SHA256 for the release package
+#   - .dmg: codesign verifies it, it is signed with a Developer ID, the
+#     notarization ticket is stapled, Gatekeeper accepts it, and the app
+#     inside reports <version>
+#   - any other file type is refused
+set -euo pipefail
+
+# --- per-project settings -------------------------------------------------
+RELEASE_REPO=orgista/odisk
+RELEASE_NAME=oDisk
+APK_PACKAGES=""
+APK_CERT_SHA256=""
+# --------------------------------------------------------------------------
+
+die() { echo "ship-github: $*" >&2; exit 1; }
+log() { echo "==> $*" >&2; }
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+changelog_has() {
+  local v="$1"
+  [ -f "$root/CHANGELOG.md" ] || die "no CHANGELOG.md in $root"
+  awk -v v="$v" '
+    /^## / { if (found) exit; h=$0; sub(/^## \[?/, "", h); sub(/[] ].*$/, "", h); if (h == v) { found=1; next } }
+    found && NF { lines++ }
+    END { exit (lines > 0 ? 0 : 1) }
+  ' "$root/CHANGELOG.md"
+}
+
+publish=0 draft=0 check_only=0 verify=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --publish) publish=1; shift ;;
+    --draft) draft=1; shift ;;
+    --dry-run) publish=0; shift ;;
+    --check-changelog) check_only=1; shift ;;
+    --no-verify) verify=0; shift ;;
+    -h|--help) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --) shift; break ;;
+    -*) die "unknown option $1" ;;
+    *) break ;;
+  esac
+done
+
+[ $# -ge 1 ] || die "usage: scripts/ship-github [--publish] [--draft] <version> <file>..."
+version="${1#v}"; shift
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || die "version '$version' is not SemVer (X.Y.Z or X.Y.Z-pre)"
+
+changelog_has "$version" || die "CHANGELOG.md has no notes under '## $version'; write them before shipping"
+log "CHANGELOG.md has notes for $version"
+[ "$check_only" = 1 ] && exit 0
+
+[ $# -ge 1 ] || die "no files to publish"
+[ "$verify" = 1 ] || [ "$publish" = 0 ] || die "--no-verify is only allowed in a dry run"
+
+android_tool() {
+  local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}" bt
+  [ -d /Volumes/DevExt/android/sdk ] && [ ! -d "$sdk/build-tools" ] && sdk=/Volumes/DevExt/android/sdk
+  bt="$(find "$sdk/build-tools" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  [ -n "$bt" ] && [ -x "$bt/$1" ] || die "$1 not found (set ANDROID_HOME)"
+  echo "$bt/$1"
+}
+
+check_apk() {
+  local apk="$1" signer badging pkg vname digest ok=0 p
+  signer="$("$(android_tool apksigner)" verify --verbose --print-certs "$apk" 2>&1)" \
+    || { echo "$signer" >&2; die "apksigner rejected $apk"; }
+  grep -Eq 'Verified using v(2|3|3\.1) scheme .*: true' <<<"$signer" \
+    || die "$apk has no v2/v3 APK signature"
+  badging="$("$(android_tool aapt2)" dump badging "$apk")" || die "aapt2 could not read $apk"
+  pkg="$(sed -nE "1s/.* name='([^']*)'.*/\1/p" <<<"$badging")"
+  vname="$(sed -nE "1s/.* versionName='([^']*)'.*/\1/p" <<<"$badging")"
+  for p in $APK_PACKAGES; do [ "$pkg" = "$p" ] && ok=1; done
+  [ "$ok" = 1 ] || die "$apk is package '$pkg', expected one of: $APK_PACKAGES"
+  [ "$vname" = "$version" ] || die "$apk is version $vname, not $version"
+  if [ -n "${APK_CERT_SHA256:-}" ] && [ "$pkg" = "${APK_PACKAGES%% *}" ]; then
+    digest="$(sed -nE 's/^Signer #1 certificate SHA-256 digest: ([0-9a-f]+)$/\1/p' <<<"$signer" | head -n 1)"
+    [ "$digest" = "$APK_CERT_SHA256" ] || die "$apk is not signed with the release key (got ${digest:0:12}…)"
+  fi
+  log "$(basename "$apk"): $pkg $vname, signature OK"
+}
+
+check_dmg() {
+  local dmg="$1" mnt app v
+  command -v codesign >/dev/null || die "DMG checks need macOS (codesign, spctl, stapler)"
+  codesign --verify --strict "$dmg" 2>/dev/null || die "codesign rejected $dmg"
+  grep -q '^Authority=Developer ID Application' <<<"$(codesign -dvv "$dmg" 2>&1)" \
+    || die "$dmg is not signed with a Developer ID"
+  xcrun stapler validate -q "$dmg" >/dev/null 2>&1 || die "$dmg has no stapled notarization ticket"
+  spctl -a -t open --context context:primary-signature "$dmg" 2>/dev/null \
+    || die "Gatekeeper rejects $dmg"
+  mnt="$(mktemp -d)"
+  hdiutil attach -nobrowse -readonly -noautoopen -mountpoint "$mnt" "$dmg" >/dev/null 2>&1 || die "cannot mount $dmg"
+  app="$(find "$mnt" -maxdepth 1 -name '*.app' | head -n 1)"
+  v=""; [ -n "$app" ] && v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null || true)"
+  hdiutil detach -quiet "$mnt" || true; rmdir "$mnt" 2>/dev/null || true
+  [ -n "$app" ] || die "$dmg has no .app at its top level"
+  [ "$v" = "$version" ] || die "the app in $dmg is version ${v:-unknown}, not $version"
+  log "$(basename "$dmg"): $(basename "$app") $v, Developer ID, notarized"
+}
+
+for f in "$@"; do
+  [ -f "$f" ] || die "not a file: $f"
+  if [ "$verify" = 0 ]; then log "SKIPPED signature checks for $(basename "$f") (--no-verify)"; continue; fi
+  case "$f" in
+    *.apk) check_apk "$f" ;;
+    *.dmg) check_dmg "$f" ;;
+    *) die "don't know how to check $f (only .apk and .dmg)" ;;
+  esac
+done
+
+args=(--repo "$RELEASE_REPO" --name "$RELEASE_NAME")
+[ "$draft" = 1 ] && args+=(--draft)
+[ "$publish" = 1 ] || args+=(--dry-run)
+cd "$root"
+[ "$publish" = 1 ] && log "Publishing $RELEASE_NAME $version to $RELEASE_REPO" \
+  || log "Dry run: pass --publish to release (only with the owner's go)"
+exec "$root/scripts/release-github" "${args[@]}" "$version" "$@"
