@@ -95,6 +95,37 @@ App/                  thin macOS app target (xcodegen project.yml), entitlements
 scripts/e2e.sh        end-to-end run of the sandboxed app with screenshots
 ```
 
+## Releases
+
+[![Latest release](https://img.shields.io/github/v/release/orgista/odisk?include_prereleases&sort=semver)](https://github.com/orgista/odisk/releases)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/orgista/odisk/badge)](https://scorecard.dev/viewer/?uri=github.com/orgista/odisk)
+
+Downloads live on the [Releases page](https://github.com/orgista/odisk/releases): the notarized disk image (`oDisk.dmg`).
+The app is built, signed with Developer ID and notarized on our build Mac and published there. The Mac App Store version uses the same version numbers.
+
+- **Versions** follow [Semantic Versioning](https://semver.org/): `vMAJOR.MINOR.PATCH`. A version with a
+  suffix (`v1.4.0-beta.1`) is a pre-release and is marked as one.
+- **Cadence:** we ship when a change is ready, and at least one maintenance release a month while the project
+  is in active development. Security fixes ship within 7 days of a confirmed report.
+- **Every release** has a [CHANGELOG](CHANGELOG.md) entry (the release notes are taken from it), a `SHA256SUMS` checksum file and a GitHub attestation for every file.
+- **Support:** only the latest release gets fixes. Please update before reporting a bug.
+
+Check a download before installing it:
+
+```bash
+shasum -a 256 -c SHA256SUMS --ignore-missing
+gh attestation verify oDisk.dmg --repo orgista/odisk
+```
+
+**Maintainers:** add the version's section to `CHANGELOG.md`, build and sign the release, then publish with
+
+```bash
+scripts/release-github X.Y.Z path/to/build-artifact
+```
+
+The script tags `vX.Y.Z`, uses the CHANGELOG section as the notes, uploads the files with `SHA256SUMS`, and can be
+re-run safely. Full policy: [orgista release process](https://github.com/orgista/.github/blob/main/RELEASING.md).
+
 ## Contributing
 
 Issues and pull requests are welcome. Please run `swift test` and `scripts/e2e.sh` before opening a pull request, and attach a health report (Details › Copy Health Report) when a drive is shown wrongly.
