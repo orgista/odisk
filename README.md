@@ -1,18 +1,25 @@
-<p align="center"><img src="docs/images/icon-256.png" width="128" height="128" alt="oDisk icon"></p>
+<div align="center">
 
-<h1 align="center">oDisk</h1>
+<img src="docs/images/icon-256.png" alt="oDisk icon" width="96">
 
-<p align="center">Drive health and speed tests for macOS</p>
+# oDisk
 
-<p align="center">
-  <a href="https://orgista.com/odisk"><img src="https://img.shields.io/badge/Mac_App_Store-$4.99-0D96F6?logo=apple&logoColor=white" alt="Mac App Store"></a>
-  <a href="https://github.com/orgista/odisk/releases/latest"><img src="https://img.shields.io/github/v/release/orgista/odisk" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/macOS-15%2B-black?logo=apple" alt="macOS 15 or later">
-  <img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/orgista/odisk" alt="License"></a>
-</p>
+**Drive health (NVMe S.M.A.R.T.) and speed tests for macOS. Native SwiftUI, sandboxed, no network.**
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/orgista/odisk/badge)](https://scorecard.dev/viewer/?uri=github.com/orgista/odisk)
+[![Latest release](https://img.shields.io/github/v/release/orgista/odisk?style=flat-square)](https://github.com/orgista/odisk/releases/latest)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache%202.0-2ea44f?style=flat-square)](LICENSE)
+[![Mac App Store](https://img.shields.io/badge/Mac%20App%20Store-%244.99-0D96F6?style=flat-square&logo=apple&logoColor=white)](https://orgista.com/odisk)
+[![macOS 15 or later](https://img.shields.io/badge/macOS-15%2B-000000?style=flat-square&logo=apple&logoColor=white)](#installation)
+[![Swift 6](https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white)](Package.swift)
+
+[Mac App Store](https://orgista.com/odisk) · [Download](https://github.com/orgista/odisk/releases/latest) · [FAQ](#faq)
+
+</div>
 
 <p align="center"><img src="docs/images/health.png" width="820" alt="oDisk health view"></p>
+
+---
 
 oDisk shows how healthy your Mac's drives are and how fast they run. It reads the S.M.A.R.T. data that NVMe drives report to macOS, from the internal SSD and from external NVMe drives on USB and Thunderbolt, and turns it into a verdict with the reasons written out. The speed test runs the four standard measurements (sequential 1 MiB and random 4 KiB, at queue depth 1 and with many requests in flight) and keeps a history.
 
@@ -96,9 +103,6 @@ scripts/e2e.sh        end-to-end run of the sandboxed app with screenshots
 ```
 
 ## Releases
-
-[![Latest release](https://img.shields.io/github/v/release/orgista/odisk?include_prereleases&sort=semver)](https://github.com/orgista/odisk/releases)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/orgista/odisk/badge)](https://scorecard.dev/viewer/?uri=github.com/orgista/odisk)
 
 Downloads live on the [Releases page](https://github.com/orgista/odisk/releases): the notarized disk image (`oDisk.dmg`).
 The app is built, signed with Developer ID and notarized on our build Mac and published there. The Mac App Store version uses the same version numbers.
