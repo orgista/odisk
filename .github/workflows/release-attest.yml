@@ -56,6 +56,8 @@ jobs:
         with:
           subject-path: assets/*
       - name: Attach the attestation bundle to the release
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: |
-          cp "${{ steps.attest.outputs.bundle-path }}" "$TAG.intoto.jsonl"
+          cp "$BUNDLE_PATH" "$TAG.intoto.jsonl"
           gh release upload "$TAG" "$TAG.intoto.jsonl" --clobber
